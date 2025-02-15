@@ -1066,18 +1066,26 @@ class WIGGLE_PT_BonePairManager(bpy.types.Panel):
         layout.operator('wiggle.add_bone_pair', text="Add Bone Pair", icon='PLUS')
 
         for i, pair in enumerate(bone_pair_manager.bone_pairs):
-            row = layout.row(align=True)
+            # Use a column to stack the bone pair elements vertically
+            col = layout.column(align=True)
             
-            # Create buttons to select bones directly
-            row.operator('wiggle.select_bone_a', text="Select Bone A")
-            row.prop(pair, 'bone_a', text="Bone A")
+            # Create buttons and properties for Bone A
+            col.operator('wiggle.select_bone_a', text="Select Bone A")
+            col.prop(pair, 'bone_a', text="Bone A")
+
+            # Create buttons and properties for Bone B
+            col.operator('wiggle.select_bone_b', text="Select Bone B")
+            col.prop(pair, 'bone_b', text="Bone B")
             
-            row.operator('wiggle.select_bone_b', text="Select Bone B")
-            row.prop(pair, 'bone_b', text="Bone B")
-            
-            # Remove button
-            remove_op = row.operator('wiggle.remove_bone_pair', text="", icon='X')
+            # Add a separator (line) between pairs for better UI separation
+            col.separator()
+
+            # Remove button for the current pair
+            remove_op = col.operator('wiggle.remove_bone_pair', text="", icon='X')
             remove_op.index = i
+
+            col.separator()
+            col.separator()
 
 class WIGGLE_OT_AddBonePair(bpy.types.Operator):
     bl_idname = "wiggle.add_bone_pair"

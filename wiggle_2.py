@@ -34,7 +34,7 @@ bl_info = {
     "category": "Animation",
 }
 
-import bpy, math
+import bpy
 from mathutils import Vector, Matrix, Euler, Quaternion, geometry
 from bpy.app.handlers import persistent
 
@@ -1485,7 +1485,7 @@ def unregister():
     bpy.utils.unregister_class(WIGGLE_PT_Tail)
     bpy.utils.unregister_class(WIGGLE_PT_Utilities)
     bpy.utils.unregister_class(WIGGLE_PT_Bake)
-    bpy.utils.unregister_class(WIGGLE_PT_Fullbone_collision)
+    bpy.utils.unregister_class(WIGGLE_PT_Fullbone_Collision)
     
     bpy.app.handlers.frame_change_pre.remove(wiggle_pre)
     bpy.app.handlers.frame_change_post.remove(wiggle_post)

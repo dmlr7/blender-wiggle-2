@@ -1,6 +1,6 @@
 # Wiggle 2
 
-Wiggle 2 is a complete rewrite of the original [wiggle bones add-on](https://github.com/shteeve3d/blender-wiggle) for Blender, offering improved features and stability.
+Wiggle 2 is a complete rewrite of the original [wiggle bones add-on](https://github.com/shteeve3d/blender-wiggle) for Blender, offering improved features and stability.  It may not be far from perfect, but it definitely gets the job done!
 
 ## Fork Notice
 
@@ -29,6 +29,11 @@ For a detailed list of changes, refer to the notice in [`wiggle_2.py`](./wiggle_
 
 ### Refreshed Interface
 - Manage everything from a single panel in the 3D animation view for a streamlined, fullscreen workflow.
+
+### (Work in Progress) Bone Pairs
+This feature pairs bones and together with full collision detection generates an invisible plane between them, is then used for collissions. 
+
+Please note that this implementation is still experimental and might not work perfectly since it's a bit challenging to test and refine. You can explore the current code on the [Bone Pairs branch](https://github.com/Labhatorian/blender-wiggle-2/tree/bonepairs).
 
 ## Usage
 

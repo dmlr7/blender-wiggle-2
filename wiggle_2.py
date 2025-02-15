@@ -1040,7 +1040,7 @@ class WIGGLE_PT_Fullbone_Collision(bpy.types.Panel):
             layout.prop(fullbone, "collision_threshold")
             layout.prop(fullbone, "dot_threshold")
 
-# Enum Property to list available bones in the armature
+# Function to list available bones in the armature
 def get_bones(self, context):
     armature = context.object
     if armature and armature.type == 'ARMATURE':
@@ -1063,6 +1063,7 @@ class WIGGLE_PT_BonePairManager(bpy.types.Panel):
         bone_pair_manager = context.scene.bone_pair_manager
         
         layout.label(text="Manage Bone Pairs:")
+        layout.operator('wiggle.add_bone_pair', text="Add Bone Pair", icon='PLUS')
 
         for i, pair in enumerate(bone_pair_manager.bone_pairs):
             row = layout.row(align=True)
@@ -1077,8 +1078,6 @@ class WIGGLE_PT_BonePairManager(bpy.types.Panel):
             # Remove button
             remove_op = row.operator('wiggle.remove_bone_pair', text="", icon='X')
             remove_op.index = i
-        
-        layout.operator('wiggle.add_bone_pair', text="Add Bone Pair", icon='PLUS')
 
 class WIGGLE_OT_AddBonePair(bpy.types.Operator):
     bl_idname = "wiggle.add_bone_pair"
@@ -1087,10 +1086,19 @@ class WIGGLE_OT_AddBonePair(bpy.types.Operator):
     def execute(self, context):
         bone_pair_manager = context.scene.bone_pair_manager
         new_pair = bone_pair_manager.bone_pairs.add()
-        bones = [bone[0] for bone in get_bones(self, context)]
-        new_pair.bone_a = bones[0]
-        new_pair.bone_b = bones[0]
-        return {'FINISHED'}
+
+        # Get selected bones in the armature
+        armature = context.object
+        selected_bones = [bone.name for bone in armature.data.bones if bone.select]
+
+        # Ensure exactly two bones are selected
+        if len(selected_bones) == 2:
+            new_pair.bone_a = selected_bones[0]
+            new_pair.bone_b = selected_bones[1]
+            return {'FINISHED'}
+        else:
+            self.report({'ERROR'}, "Please select exactly two bones")
+            return {'CANCELLED'}
 
 class WIGGLE_OT_RemoveBonePair(bpy.types.Operator):
     bl_idname = "wiggle.remove_bone_pair"

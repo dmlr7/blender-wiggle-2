@@ -36,7 +36,8 @@ bl_info = {
 }
 
 import bpy
-from mathutils import Vector, Matrix, Euler, Quaternion, geometry
+import mathutils
+from mathutils import Vector, Matrix, Quaternion, geometry
 from bpy.app.handlers import persistent
 
 #return m2 in m1 space
@@ -229,6 +230,7 @@ def collide_full_bone(b, dg):
         pos = pos_head.lerp(pos_tail, t)
         vel = vel_head.lerp(vel_tail, t)
 
+        # Existing mesh collider checks (unchanged)
         for collider in colliders:
             cmw = collider.matrix_world
             p = collider.closest_point_on_mesh(cmw.inverted() @ pos, depsgraph=dg)
@@ -265,6 +267,62 @@ def collide_full_bone(b, dg):
                 })
 
                 previous_cp = cp_head  # Update last collision point
+
+        # New bone pair plane collision check
+        if hasattr(bpy.context.scene, 'bone_pair_manager') and bpy.context.scene.bone_pair_manager:
+            for pair in bpy.context.scene.bone_pair_manager.bone_pairs:
+                if pair.bone_a == b or pair.bone_b == b:
+                    partner = pair.bone_b if pair.bone_a == b else pair.bone_a
+
+                    # Define the invisible square plane based on partner's wiggle data
+                    partner_head = partner.wiggle.position_head
+                    partner_tail = partner.wiggle.position_tail
+                    plane_center = partner_head.lerp(partner_tail, 0.5)
+                    bone_dir = (partner_tail - partner_head).normalized()
+                    up = mathutils.Vector((0, 0, 1))
+                    if abs(bone_dir.dot(up)) > 0.99:
+                        up = mathutils.Vector((0, 1, 0))
+                    side = bone_dir.cross(up).normalized()
+                    plane_normal = bone_dir.cross(side).normalized()
+                    square_size = partner.wiggle_radius * 2.0
+                    half_size = square_size * 0.5
+                    # Define the second axis on the plane
+                    plane_y = plane_normal.cross(side).normalized()
+
+                    # Project current pos onto the plane
+                    d = (pos - plane_center).dot(plane_normal)
+                    proj_pos = pos - d * plane_normal
+
+                    # Compute local coordinates in the plane
+                    local_x = (proj_pos - plane_center).dot(side)
+                    local_y = (proj_pos - plane_center).dot(plane_y)
+
+                    if abs(local_x) <= half_size and abs(local_y) <= half_size:
+                        # Determine minimal displacement to push out of the square
+                        delta_x = half_size - abs(local_x)
+                        delta_y = half_size - abs(local_y)
+                        if delta_x < delta_y:
+                            push_dir = side if local_x >= 0 else -side
+                        else:
+                            push_dir = plane_y if local_y >= 0 else -plane_y
+                        # Use the same push factor as in the original code
+                        pos = proj_pos + push_dir * (b.wiggle_radius * 0.5)
+                        if co_head:
+                            collision_point = co_head.matrix_world @ cp_head
+                            pos = pos.lerp(collision_point, b.wiggle_friction * 0.5)
+
+                        collision_occurred = True
+                        cp_head = relative_matrix(Matrix.Identity(4), Matrix.Translation(pos)).translation
+                        co_head = partner  # Using the partner bone as the collider reference
+                        cn_head = push_dir.normalized()
+                        collision_data.append({
+                            'position': pos,
+                            'collider': partner,
+                            'normal': cn_head,
+                            'point': cp_head
+                        })
+                        previous_cp = cp_head
+                    break  # Process only one bone pair collision per step
 
     if collision_occurred:
         b.wiggle.position_head = pos_head.lerp(pos, 0.5)
@@ -563,17 +621,29 @@ def wiggle_pre(scene):
                 continue
             if not b.wiggle.collision_col:
                 if b.wiggle_collider_collection:
-                    b.wiggle_collider_collection = bpy.data.collections.get(b.wiggle_collider_collection.name)
-                    b.wiggle.collision_col = scene.collection
+                    # Store the name of the collection
+                    collider_col = bpy.data.collections.get(b.wiggle_collider_collection.name)
+                    if collider_col:
+                        b.wiggle.collision_col_name = collider_col.name  # Store name instead of reference
+
                 elif b.wiggle_collider_collection_head:
-                    bpy.data.collections.get(b.wiggle_collider_collection_head.name)
-                    b.wiggle.collision_col = scene.collection
+                    # Store the name of the head collection
+                    collider_col_head = bpy.data.collections.get(b.wiggle_collider_collection_head.name)
+                    if collider_col_head:
+                        b.wiggle.collision_col_name = collider_col_head.name  # Store name
+
                 elif b.wiggle_collider:
-                    bpy.data.objects.get(b.wiggle_collider.name)
-                    b.wiggle.collision_col = scene.collection
+                    # Store the name of the object
+                    collider_obj = bpy.data.objects.get(b.wiggle_collider.name)
+                    if collider_obj:
+                        b.wiggle.collision_obj_name = collider_obj.name  # Store name
+
                 elif b.wiggle_collider_head:
-                    bpy.data.objects.get(b.wiggle_collider_head.name)
-                    b.wiggle.collision_col = scene.collection
+                    # Store the name of the head object
+                    collider_obj_head = bpy.data.objects.get(b.wiggle_collider_head.name)
+                    if collider_obj_head:
+                        b.wiggle.collision_obj_name = collider_obj_head.name  # Store name
+
             b.location = Vector((0,0,0))
             b.rotation_quaternion = Quaternion((1,0,0,0))
             b.rotation_euler = Vector((0,0,0))
@@ -1069,12 +1139,7 @@ class WIGGLE_PT_BonePairManager(bpy.types.Panel):
             # Use a column to stack the bone pair elements vertically
             col = layout.column(align=True)
             
-            # Create buttons and properties for Bone A
-            col.operator('wiggle.select_bone_a', text="Select Bone A")
             col.prop(pair, 'bone_a', text="Bone A")
-
-            # Create buttons and properties for Bone B
-            col.operator('wiggle.select_bone_b', text="Select Bone B")
             col.prop(pair, 'bone_b', text="Bone B")
             
             # Add a separator (line) between pairs for better UI separation
@@ -1118,7 +1183,7 @@ class WIGGLE_OT_RemoveBonePair(bpy.types.Operator):
         bone_pair_manager = context.scene.bone_pair_manager
         bone_pair_manager.bone_pairs.remove(self.index)
         return {'FINISHED'}
-    
+
 #endregion
 #region Classes
 class WiggleBoneItem(bpy.types.PropertyGroup):

@@ -1040,6 +1040,17 @@ class WIGGLE_PT_Fullbone_Collision(bpy.types.Panel):
             layout.prop(fullbone, "collision_threshold")
             layout.prop(fullbone, "dot_threshold")
 
+# Enum Property to list available bones in the armature
+def get_bones(self, context):
+    armature = context.object
+    if armature and armature.type == 'ARMATURE':
+        return [(bone.name, bone.name, "") for bone in armature.data.bones]
+    return []
+
+class BonePair(bpy.types.PropertyGroup):
+    bone_a: bpy.props.EnumProperty(name="Bone A", description="First bone in the pair", items=get_bones)
+    bone_b: bpy.props.EnumProperty(name="Bone B", description="Second bone in the pair", items=get_bones)
+
 class WIGGLE_PT_BonePairManager(bpy.types.Panel):
     bl_label = 'Bone Pair Manager'
     bl_parent_id = 'WIGGLE_PT_Settings'
@@ -1049,47 +1060,48 @@ class WIGGLE_PT_BonePairManager(bpy.types.Panel):
 
     def draw(self, context):
         layout = self.layout
-        collision_settings = context.scene.fullbone_collision_settings
+        bone_pair_manager = context.scene.bone_pair_manager
         
-        # Section for Bone Pairs
         layout.label(text="Manage Bone Pairs:")
-        
-        # Display the list of current bone pairs
-        for i, pair in enumerate(collision_settings.bone_pairs):
+
+        for i, pair in enumerate(bone_pair_manager.bone_pairs):
             row = layout.row(align=True)
+            
+            # Create buttons to select bones directly
+            row.operator('wiggle.select_bone_a', text="Select Bone A")
             row.prop(pair, 'bone_a', text="Bone A")
+            
+            row.operator('wiggle.select_bone_b', text="Select Bone B")
             row.prop(pair, 'bone_b', text="Bone B")
             
-            # Button to remove the bone pair
+            # Remove button
             remove_op = row.operator('wiggle.remove_bone_pair', text="", icon='X')
             remove_op.index = i
         
-        # Button to add a new bone pair
         layout.operator('wiggle.add_bone_pair', text="Add Bone Pair", icon='PLUS')
 
-# # Operator to add bone pairs
-# class WIGGLE_OT_AddBonePair(bpy.types.Operator):
-#     bl_idname = "wiggle.add_bone_pair"
-#     bl_label = "Add Bone Pair"
+class WIGGLE_OT_AddBonePair(bpy.types.Operator):
+    bl_idname = "wiggle.add_bone_pair"
+    bl_label = "Add Bone Pair"
     
-#     def execute(self, context):
-#         collision_settings = context.scene.fullbone_collision_settings
-#         new_pair = collision_settings.bone_pairs.add()
-#         new_pair.bone_a = ""
-#         new_pair.bone_b = ""
-#         return {'FINISHED'}
+    def execute(self, context):
+        bone_pair_manager = context.scene.bone_pair_manager
+        new_pair = bone_pair_manager.bone_pairs.add()
+        bones = [bone[0] for bone in get_bones(self, context)]
+        new_pair.bone_a = bones[0]
+        new_pair.bone_b = bones[0]
+        return {'FINISHED'}
 
-# # Operator to remove bone pairs
-# class WIGGLE_OT_RemoveBonePair(bpy.types.Operator):
-#     bl_idname = "wiggle.remove_bone_pair"
-#     bl_label = "Remove Bone Pair"
+class WIGGLE_OT_RemoveBonePair(bpy.types.Operator):
+    bl_idname = "wiggle.remove_bone_pair"
+    bl_label = "Remove Bone Pair"
     
-#     index: bpy.props.IntProperty()
+    index: bpy.props.IntProperty()
     
-#     def execute(self, context):
-#         collision_settings = context.scene.fullbone_collision_settings
-#         collision_settings.bone_pairs.remove(self.index)
-#         return {'FINISHED'}
+    def execute(self, context):
+        bone_pair_manager = context.scene.bone_pair_manager
+        bone_pair_manager.bone_pairs.remove(self.index)
+        return {'FINISHED'}
     
 #endregion
 #region Classes
@@ -1167,16 +1179,14 @@ class WiggleScene(bpy.types.PropertyGroup):
     reset: bpy.props.BoolProperty(default=False)
     full_bone_collision: bpy.props.PointerProperty(type=FullBoneCollisionSettings)
 
-class BonePair(bpy.types.PropertyGroup):
-    bone_a: bpy.props.StringProperty(name="Bone A", description="First bone in the pair")
-    bone_b: bpy.props.StringProperty(name="Bone B", description="Second bone in the pair")
+class BonePairManagerContext(bpy.types.PropertyGroup):
+    bone_pairs: bpy.props.CollectionProperty(type=BonePair)
 
 #endregion
 
 def register():
     
     #WIGGLE TOGGLES
-    
     bpy.types.Scene.wiggle_enable = bpy.props.BoolProperty(
         name = 'Enable Scene',
         description = 'Enable wiggle on this scene',
@@ -1524,8 +1534,10 @@ def register():
     bpy.utils.register_class(WIGGLE_PT_Fullbone_Collision)
     bpy.utils.register_class(BonePair)
     bpy.utils.register_class(WIGGLE_PT_BonePairManager)
-    # bpy.utils.register_class(WIGGLE_OT_AddBonePair)
-    # bpy.utils.register_class(WIGGLE_OT_RemoveBonePair)
+    bpy.utils.register_class(WIGGLE_OT_AddBonePair)
+    bpy.utils.register_class(WIGGLE_OT_RemoveBonePair)
+    bpy.utils.register_class(BonePairManagerContext)
+    bpy.types.Scene.bone_pair_manager = bpy.props.PointerProperty(type=BonePairManagerContext)
     
     bpy.app.handlers.frame_change_pre.append(wiggle_pre)
     bpy.app.handlers.frame_change_post.append(wiggle_post)
@@ -1553,8 +1565,9 @@ def unregister():
     bpy.utils.unregister_class(WIGGLE_PT_Fullbone_Collision)
     bpy.utils.unregister_class(BonePair)
     bpy.utils.unregister_class(WIGGLE_PT_BonePairManager)
-    # bpy.utils.unregister_class(WIGGLE_OT_AddBonePair)
-    # bpy.utils.unregister_class(WIGGLE_OT_RemoveBonePair)
+    bpy.utils.unregister_class(WIGGLE_OT_AddBonePair)
+    bpy.utils.unregister_class(WIGGLE_OT_RemoveBonePair)
+    bpy.utils.unregister_class(BonePairManagerContext)
     
     bpy.app.handlers.frame_change_pre.remove(wiggle_pre)
     bpy.app.handlers.frame_change_post.remove(wiggle_post)

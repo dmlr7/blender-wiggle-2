@@ -25,7 +25,7 @@ bl_info = {
     "name": "Wiggle 2 (Fork)",
     "author": "Labhatorian",
     "original_author": "Steve Miller",
-    "version": (2, 0, 0),
+    "version": (2, 0, 1),
     "blender": (3, 00, 0),
     "location": "3D Viewport > Animation Panel",
     "description": "Simulate spring-like physics on Bone transforms",

@@ -892,7 +892,7 @@ class WIGGLE_PT_Head(WigglePanel, bpy.types.Panel):
         selected_bones = context.selected_pose_bones
 
         # Function to set properties for all selected bones
-        def set_collision_props(attr, value):
+        def set_props_for_selected(attr, value):
             for bone in selected_bones:
                 setattr(bone, attr, value)
         
@@ -900,8 +900,15 @@ class WIGGLE_PT_Head(WigglePanel, bpy.types.Panel):
         drawprops(col, b, ['wiggle_mass_head', 'wiggle_stiff_head', 'wiggle_stretch_head', 'wiggle_damp_head'])
         col.separator()
         col.prop(b, 'wiggle_gravity_head')
+        
+        # Wind Object
         row = col.row(align=True)
         row.prop(b, 'wiggle_wind_ob_head')
+        
+        # Apply wind object to all selected bones if changed
+        if b.wiggle_wind_ob_head:
+            set_props_for_selected('wiggle_wind_ob_head', b.wiggle_wind_ob_head)
+        
         sub = row.row(align=True)
         sub.ui_units_x = 5
         sub.prop(b, 'wiggle_wind_head', text='')
@@ -916,10 +923,9 @@ class WIGGLE_PT_Head(WigglePanel, bpy.types.Panel):
             row = col.row(align=True)
             row.prop_search(b, 'wiggle_collider_head', context.scene, 'objects', text=' ')
             
-            # Apply to all selected bones if changed
+            # Apply collider to all selected bones if changed
             if b.wiggle_collider_head:
-                # Set the collider for all selected bones
-                set_collision_props('wiggle_collider_head', b.wiggle_collider_head)
+                set_props_for_selected('wiggle_collider_head', b.wiggle_collider_head)
                 
                 if b.wiggle_collider_head.name in context.scene.objects:
                     collision = True
@@ -929,10 +935,9 @@ class WIGGLE_PT_Head(WigglePanel, bpy.types.Panel):
             row = col.row(align=True)
             row.prop_search(b, 'wiggle_collider_collection_head', bpy.data, 'collections', text=' ')
             
-            # Apply to all selected bones if changed
+            # Apply collider collection to all selected bones if changed
             if b.wiggle_collider_collection_head:
-                # Set the collider collection for all selected bones
-                set_collision_props('wiggle_collider_collection_head', b.wiggle_collider_collection_head)
+                set_props_for_selected('wiggle_collider_collection_head', b.wiggle_collider_collection_head)
                 
                 if b.wiggle_collider_collection_head in context.scene.collection.children_recursive:
                     collision = True
@@ -975,7 +980,7 @@ class WIGGLE_PT_Tail(WigglePanel, bpy.types.Panel):
         selected_bones = context.selected_pose_bones
 
         # Function to set properties for all selected bones
-        def set_collision_props(attr, value):
+        def set_props_for_selected(attr, value):
             for bone in selected_bones:
                 setattr(bone, attr, value)
         
@@ -983,8 +988,15 @@ class WIGGLE_PT_Tail(WigglePanel, bpy.types.Panel):
         drawprops(col, b, ['wiggle_mass', 'wiggle_stiff', 'wiggle_stretch', 'wiggle_damp'])
         col.separator()
         col.prop(b, 'wiggle_gravity')
+        
+        # Wind Object
         row = col.row(align=True)
         row.prop(b, 'wiggle_wind_ob')
+        
+        # Apply wind object to all selected bones if changed
+        if b.wiggle_wind_ob:
+            set_props_for_selected('wiggle_wind_ob', b.wiggle_wind_ob)
+        
         sub = row.row(align=True)
         sub.ui_units_x = 5
         sub.prop(b, 'wiggle_wind', text='')
@@ -1001,8 +1013,7 @@ class WIGGLE_PT_Tail(WigglePanel, bpy.types.Panel):
             
             # Apply to all selected bones if changed
             if b.wiggle_collider:
-                # Set the collider for all selected bones
-                set_collision_props('wiggle_collider', b.wiggle_collider)
+                set_props_for_selected('wiggle_collider', b.wiggle_collider)
                 
                 if b.wiggle_collider.name in context.scene.objects:
                     collision = True
@@ -1014,8 +1025,7 @@ class WIGGLE_PT_Tail(WigglePanel, bpy.types.Panel):
             
             # Apply to all selected bones if changed
             if b.wiggle_collider_collection:
-                # Set the collider collection for all selected bones
-                set_collision_props('wiggle_collider_collection', b.wiggle_collider_collection)
+                set_props_for_selected('wiggle_collider_collection', b.wiggle_collider_collection)
                 
                 if b.wiggle_collider_collection in context.scene.collection.children_recursive:
                     collision = True

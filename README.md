@@ -1,6 +1,6 @@
 # Wiggle 2
 
-Wiggle 2 is a complete rewrite of the original [wiggle bones add-on](https://github.com/shteeve3d/blender-wiggle) for Blender, offering improved features and stability.  It may not be far from perfect, but it definitely gets the job done!
+Wiggle 2 is a complete rewrite of the original [wiggle bones add-on](https://github.com/shteeve3d/blender-wiggle) for Blender, offering improved features and stability. It may be far from perfect, but it definitely gets the job done!
 
 ## Fork Notice
 

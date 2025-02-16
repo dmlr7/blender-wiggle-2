@@ -862,122 +862,171 @@ class WIGGLE_PT_Settings(WigglePanel, bpy.types.Panel):
             row.label(text='Bone muted.')
             return
 
-class WIGGLE_PT_Head(WigglePanel,bpy.types.Panel):
+class WIGGLE_PT_Head(WigglePanel, bpy.types.Panel):
     bl_label = ''
     bl_parent_id = 'WIGGLE_PT_Settings'
     bl_options = {'HEADER_LAYOUT_EXPAND'}
     
     @classmethod
-    def poll(cls,context):
+    def poll(cls, context):
         return context.scene.wiggle_enable and context.object and not context.object.wiggle_mute and context.active_pose_bone and not context.active_pose_bone.wiggle_mute and not context.active_pose_bone.bone.use_connect
     
-    def draw_header(self,context):
-        row=self.layout.row(align=True)
+    def draw_header(self, context):
+        row = self.layout.row(align=True)
         row.prop(context.active_pose_bone, 'wiggle_head')
     
-    def draw(self,context):
+    def draw(self, context):
         b = context.active_pose_bone
-        if not b.wiggle_head: return
-    
+        if not b.wiggle_head: 
+            return
+        
         layout = self.layout
         layout.use_property_split = True
         layout.use_property_decorate = False
         
-        def drawprops(layout,b,props):
+        def drawprops(layout, b, props):
             for p in props:
                 layout.prop(b, p)
         
+        # Get all selected bones
+        selected_bones = context.selected_pose_bones
+
+        # Function to set properties for all selected bones
+        def set_collision_props(attr, value):
+            for bone in selected_bones:
+                setattr(bone, attr, value)
+        
         col = layout.column(align=True)
-        drawprops(col,b,['wiggle_mass_head','wiggle_stiff_head','wiggle_stretch_head','wiggle_damp_head'])
+        drawprops(col, b, ['wiggle_mass_head', 'wiggle_stiff_head', 'wiggle_stretch_head', 'wiggle_damp_head'])
         col.separator()
-        col.prop(b,'wiggle_gravity_head')
-        row=col.row(align=True)
-        row.prop(b,'wiggle_wind_ob_head')
+        col.prop(b, 'wiggle_gravity_head')
+        row = col.row(align=True)
+        row.prop(b, 'wiggle_wind_ob_head')
         sub = row.row(align=True)
         sub.ui_units_x = 5
         sub.prop(b, 'wiggle_wind_head', text='')
         col.separator()
-        col.prop(b, 'wiggle_collider_type_head',text='Collisions')
+        
+        # Collision settings
+        col.prop(b, 'wiggle_collider_type_head', text='Collisions')
+
         collision = False
+        
         if b.wiggle_collider_type_head == 'Object':
             row = col.row(align=True)
-            row.prop_search(b, 'wiggle_collider_head', context.scene, 'objects',text=' ')
+            row.prop_search(b, 'wiggle_collider_head', context.scene, 'objects', text=' ')
+            
+            # Apply to all selected bones if changed
             if b.wiggle_collider_head:
+                # Set the collider for all selected bones
+                set_collision_props('wiggle_collider_head', b.wiggle_collider_head)
+                
                 if b.wiggle_collider_head.name in context.scene.objects:
                     collision = True
                 else:
-                    row.label(text='',icon='UNLINKED')
+                    row.label(text='', icon='UNLINKED')
         else:
             row = col.row(align=True)
             row.prop_search(b, 'wiggle_collider_collection_head', bpy.data, 'collections', text=' ')
+            
+            # Apply to all selected bones if changed
             if b.wiggle_collider_collection_head:
+                # Set the collider collection for all selected bones
+                set_collision_props('wiggle_collider_collection_head', b.wiggle_collider_collection_head)
+                
                 if b.wiggle_collider_collection_head in context.scene.collection.children_recursive:
                     collision = True
                 else:
-                    row.label(text='',icon='UNLINKED')
-            
+                    row.label(text='', icon='UNLINKED')
+
         if collision:
             col = layout.column(align=True)
-            drawprops(col,b,['wiggle_radius_head','wiggle_friction_head','wiggle_bounce_head','wiggle_sticky_head'])
-        layout.prop(b,'wiggle_chain_head')
+            drawprops(col, b, ['wiggle_radius_head', 'wiggle_friction_head', 'wiggle_bounce_head', 'wiggle_sticky_head'])
+        
+        layout.prop(b, 'wiggle_chain_head')
             
-class WIGGLE_PT_Tail(WigglePanel,bpy.types.Panel):
+class WIGGLE_PT_Tail(WigglePanel, bpy.types.Panel):
     bl_label = ''
     bl_parent_id = 'WIGGLE_PT_Settings'
     bl_options = {'HEADER_LAYOUT_EXPAND'}
     
     @classmethod
-    def poll(cls,context):
+    def poll(cls, context):
         return context.scene.wiggle_enable and context.object and not context.object.wiggle_mute and context.active_pose_bone and not context.active_pose_bone.wiggle_mute
     
-    def draw_header(self,context):
-        row=self.layout.row(align=True)
+    def draw_header(self, context):
+        row = self.layout.row(align=True)
         row.prop(context.active_pose_bone, 'wiggle_tail')
         
-    def draw(self,context):
+    def draw(self, context):
         b = context.active_pose_bone
-        if not b.wiggle_tail: return
-    
+        if not b.wiggle_tail: 
+            return
+        
         layout = self.layout
         layout.use_property_split = True
         layout.use_property_decorate = False
         
-        def drawprops(layout,b,props):
+        def drawprops(layout, b, props):
             for p in props:
                 layout.prop(b, p)
+
+        # Get all selected bones
+        selected_bones = context.selected_pose_bones
+
+        # Function to set properties for all selected bones
+        def set_collision_props(attr, value):
+            for bone in selected_bones:
+                setattr(bone, attr, value)
         
         col = layout.column(align=True)
-        drawprops(col,b,['wiggle_mass','wiggle_stiff','wiggle_stretch','wiggle_damp'])
+        drawprops(col, b, ['wiggle_mass', 'wiggle_stiff', 'wiggle_stretch', 'wiggle_damp'])
         col.separator()
-        col.prop(b,'wiggle_gravity')
-        row=col.row(align=True)
-        row.prop(b,'wiggle_wind_ob')
+        col.prop(b, 'wiggle_gravity')
+        row = col.row(align=True)
+        row.prop(b, 'wiggle_wind_ob')
         sub = row.row(align=True)
         sub.ui_units_x = 5
         sub.prop(b, 'wiggle_wind', text='')
         col.separator()
-        col.prop(b, 'wiggle_collider_type',text='Collisions')
+        
+        # Collision settings
+        col.prop(b, 'wiggle_collider_type', text='Collisions')
+
         collision = False
+        
         if b.wiggle_collider_type == 'Object':
             row = col.row(align=True)
-            row.prop_search(b, 'wiggle_collider', context.scene, 'objects',text=' ')
+            row.prop_search(b, 'wiggle_collider', context.scene, 'objects', text=' ')
+            
+            # Apply to all selected bones if changed
             if b.wiggle_collider:
+                # Set the collider for all selected bones
+                set_collision_props('wiggle_collider', b.wiggle_collider)
+                
                 if b.wiggle_collider.name in context.scene.objects:
                     collision = True
                 else:
-                    row.label(text='',icon='UNLINKED')
+                    row.label(text='', icon='UNLINKED')
         else:
             row = col.row(align=True)
             row.prop_search(b, 'wiggle_collider_collection', bpy.data, 'collections', text=' ')
+            
+            # Apply to all selected bones if changed
             if b.wiggle_collider_collection:
+                # Set the collider collection for all selected bones
+                set_collision_props('wiggle_collider_collection', b.wiggle_collider_collection)
+                
                 if b.wiggle_collider_collection in context.scene.collection.children_recursive:
                     collision = True
                 else:
-                    row.label(text='',icon='UNLINKED')
+                    row.label(text='', icon='UNLINKED')
+
         if collision:
             col = layout.column(align=True)
-            drawprops(col,b,['wiggle_radius','wiggle_friction','wiggle_bounce','wiggle_sticky'])
-        layout.prop(b,'wiggle_chain')
+            drawprops(col, b, ['wiggle_radius', 'wiggle_friction', 'wiggle_bounce', 'wiggle_sticky'])
+        
+        layout.prop(b, 'wiggle_chain')
 
 class WIGGLE_PT_Utilities(WigglePanel,bpy.types.Panel):
     bl_label = 'Global Wiggle Utilities'

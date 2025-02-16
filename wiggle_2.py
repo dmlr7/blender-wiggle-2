@@ -562,17 +562,29 @@ def wiggle_pre(scene):
                 continue
             if not b.wiggle.collision_col:
                 if b.wiggle_collider_collection:
-                    b.wiggle_collider_collection = bpy.data.collections.get(b.wiggle_collider_collection.name)
-                    b.wiggle.collision_col = scene.collection
+                    # Store the name of the collection
+                    collider_col = bpy.data.collections.get(b.wiggle_collider_collection.name)
+                    if collider_col:
+                        b.wiggle.collision_col_name = collider_col.name  # Store name instead of reference
+
                 elif b.wiggle_collider_collection_head:
-                    bpy.data.collections.get(b.wiggle_collider_collection_head.name)
-                    b.wiggle.collision_col = scene.collection
+                    # Store the name of the head collection
+                    collider_col_head = bpy.data.collections.get(b.wiggle_collider_collection_head.name)
+                    if collider_col_head:
+                        b.wiggle.collision_col_name = collider_col_head.name  # Store name
+
                 elif b.wiggle_collider:
-                    bpy.data.objects.get(b.wiggle_collider.name)
-                    b.wiggle.collision_col = scene.collection
+                    # Store the name of the object
+                    collider_obj = bpy.data.objects.get(b.wiggle_collider.name)
+                    if collider_obj:
+                        b.wiggle.collision_obj_name = collider_obj.name  # Store name
+
                 elif b.wiggle_collider_head:
-                    bpy.data.objects.get(b.wiggle_collider_head.name)
-                    b.wiggle.collision_col = scene.collection
+                    # Store the name of the head object
+                    collider_obj_head = bpy.data.objects.get(b.wiggle_collider_head.name)
+                    if collider_obj_head:
+                        b.wiggle.collision_obj_name = collider_obj_head.name  # Store name
+    
             b.location = Vector((0,0,0))
             b.rotation_quaternion = Quaternion((1,0,0,0))
             b.rotation_euler = Vector((0,0,0))

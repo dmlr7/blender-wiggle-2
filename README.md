@@ -81,6 +81,8 @@ Please note that this implementation is still experimental and might not work pe
    - Overwrite merges keyframes into the armature's current action or creates a new one. Preroll runs the simulation for a specified number of frames, allowing it to settle, and works in tandem with 'Loop physics' for clean animated loops. \
    ![Bake](./images/bake.png?raw=true "Bake")
 
+**to do/check:**
+https://github.com/shteeve3d/blender-wiggle-2/issues/87#issuecomment-2664529937
 ## License
 Wiggle 2 is licensed under the [GNU General Public License, Version 3](./LICENSE). \
 Individual files may have different, but compatible licenses.
